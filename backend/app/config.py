@@ -21,6 +21,7 @@ if BaseSettings:
 	class Settings(BaseSettings):
 		SUPABASE_URL: AnyUrl
 		SUPABASE_KEY: str
+		SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
 		CLOUDINARY_CLOUD_NAME: Optional[str] = None
 		CLOUDINARY_API_KEY: Optional[str] = None
 		CLOUDINARY_API_SECRET: Optional[str] = None
@@ -38,6 +39,7 @@ else:
 	class Settings:
 		SUPABASE_URL = os.environ.get('SUPABASE_URL', 'http://localhost')
 		SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
+		SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
 		CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
 		CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
 		CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')

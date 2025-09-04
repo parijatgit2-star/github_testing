@@ -5,7 +5,8 @@ from ..config import settings
 
 BASE_REST = str(settings.SUPABASE_URL).rstrip('/') + '/rest/v1'
 BASE_AUTH = str(settings.SUPABASE_URL).rstrip('/') + '/auth/v1'
-API_KEY = settings.SUPABASE_KEY
+# Prefer service role key for server-side REST operations when available
+API_KEY = getattr(settings, 'SUPABASE_SERVICE_ROLE_KEY', None) or settings.SUPABASE_KEY
 
 
 def _build_filters(filters: Optional[Dict[str, Any]]) -> Optional[str]:
@@ -67,8 +68,9 @@ async def auth_request(method: str, path: str, payload: Optional[Dict] = None, t
         if method.upper() == 'GET':
             r = await client.get(url, headers=req_headers)
         elif method.upper() == 'POST':
+            # For form posts we still want to include Authorization and apikey headers
             if form:
-                r = await client.post(url, data=payload, headers={'apikey': API_KEY, 'Accept': 'application/json'})
+                r = await client.post(url, data=payload, headers=req_headers)
             else:
                 r = await client.post(url, json=payload, headers=req_headers)
         elif method.upper() == 'DELETE':

@@ -80,7 +80,7 @@ async def create_issue(data: Union[IssueCreateModel, IssueCreate, Dict[str, Any]
             return created
         # on failure raise to be handled by caller
         raise Exception(r.get('data'))
-    except Exception:
+    except Exception as exc:
         # attempt to cleanup uploaded images on failure
         for u in uploaded:
             if u.get('public_id'):
@@ -88,8 +88,8 @@ async def create_issue(data: Union[IssueCreateModel, IssueCreate, Dict[str, Any]
                     await delete_image(u.get('public_id'))
                 except Exception:
                     pass
-        # bubble up as HTTPException in route or return None
-        return None
+        # Re-raise the original exception so callers (routes) can convert to HTTP errors
+        raise
 
 
 async def get_issues() -> Any:
