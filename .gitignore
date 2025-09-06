@@ -1,0 +1,157 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.tox/
+*.cover
+*.coverage
+coverage.xml
+*.coveragerc
+htmlcov/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# virtualenv
+venv/
+ENV/
+env/
+.venv/
+venv.bak/
+
+# Spyder project settings
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+site
+
+# mypy
+.mypy_cache/
+
+# VS Code
+.vscode/
+
+# IDEs and editors
+.idea/
+*.sublime-*
+*.tmproj
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Expo / React Native / Next.js build artifacts
+.expo/
+.expo-shared/
+.expo-cache/
+.expo/webpack.config.js
+android/
+ios/
+build/
+web-build/
+.parcel-cache/
+
+# Next.js
+.next/
+out/
+
+# React Native
+*.keystore
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Log files
+*.log
+logs/
+
+# Environment / secrets
+
+
+env.local
+
+secrets/
+*.pem
+*.key
+*.crt
+
+# Database
+*.sqlite3
+
+# Coverage and test reports
+coverage/
+
+# Misc
+*.swp
+*.swo
+*.tmp

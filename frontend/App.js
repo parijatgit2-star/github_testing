@@ -1,15 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, TextInput, Image, FlatList } from 'react-native';
+import { View, Text, Button, TextInput, Image, FlatList, Alert } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+
+let _supabase = null;
+function getSupabase() {
+  if (_supabase) return _supabase;
+  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
+  try {
+    _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    return _supabase;
+  } catch (e) {
+    return null;
+  }
+}
 
 export default function App() {
   const [email, setEmail] = useState('');
   const [user, setUser] = useState(null);
+  const [photos, setPhotos] = useState([]);
   const [description, setDescription] = useState('');
   const [issues, setIssues] = useState([]);
 
@@ -20,10 +34,50 @@ export default function App() {
         console.warn('Location permission not granted');
       }
     })();
+    // populate current session/user if available
+    (async () => {
+      try {
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data } = await sb.auth.getSession();
+        const session = data?.session || null;
+        if (session) {
+          setUser({
+            access_token: session.access_token,
+            user: session.user,
+            email: session.user?.email,
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+
+    // listen for auth state changes and keep user updated
+  const sb = getSupabase();
+  const { data: listener } = sb ? sb.auth.onAuthStateChange((event, session) => {
+      try {
+        const s = session?.session || session || null;
+        if (s) {
+          setUser({ access_token: s.access_token, user: s.user, email: s.user?.email });
+        } else {
+          setUser(null);
+        }
+      } catch (e) {
+        // ignore
+      }
+  }) : { data: null };
+    return () => {
+      try {
+        listener?.subscription?.unsubscribe?.();
+      } catch (e) {}
+    };
   }, []);
 
   async function signIn() {
-    const { data, error } = await supabase.auth.signInWithOtp({ email });
+    const sb = getSupabase();
+    if (!sb) return Alert.alert('Missing configuration', 'Supabase is not configured in this environment.');
+    const { data, error } = await sb.auth.signInWithOtp({ email });
     if (error) return alert(error.message);
     alert('Check your email for login link');
   }
@@ -48,7 +102,7 @@ export default function App() {
       });
     }
 
-    const headers = {};
+  const headers = {};
     if (user && user.access_token) {
       headers['Authorization'] = `Bearer ${user.access_token}`;
     }
@@ -58,15 +112,58 @@ export default function App() {
       headers,
       body: fd
     });
-    await res.json();
-    alert('Submitted');
-    fetchIssues();
+    const result = await res.json().catch(() => null);
+    if (!res.ok) {
+      console.warn('submitIssue failed', res.status, result);
+      Alert.alert('Submit failed', JSON.stringify(result || {}));
+    } else {
+      Alert.alert('Submitted');
+      fetchIssues();
+    }
   }
 
   async function fetchIssues() {
     // Simple list fetch via Supabase
-    const { data, error } = await supabase.from('issues').select('*').order('created_at', { ascending: false }).limit(20);
-    if (!error) setIssues(data || []);
+    try {
+      const sb = getSupabase();
+      if (!sb) return;
+      const { data, error } = await sb.from('issues').select('*').order('created_at', { ascending: false }).limit(20);
+      if (!error) setIssues(data || []);
+    } catch (e) {
+      console.warn('fetchIssues error', e);
+    }
+  }
+
+  useEffect(() => {
+    // fetch initial issues on mount
+    fetchIssues();
+  }, []);
+
+  // Image picker helper
+  async function pickImage() {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'Permission to access photos is required to attach images.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+        allowsEditing: true,
+      });
+      if (!result.cancelled) {
+        // result.uri, result.type differ across SDKs; standardize into an object usable in RN FormData
+        const file = {
+          uri: result.uri,
+          name: result.uri.split('/').pop(),
+          type: 'image/jpeg',
+        };
+        setPhotos(prev => [...prev, file]);
+      }
+    } catch (e) {
+      console.warn('pickImage error', e);
+    }
   }
 
   return (
@@ -83,7 +180,19 @@ export default function App() {
 
       <Text style={{ marginTop: 24 }}>Report an issue</Text>
       <TextInput value={description} onChangeText={setDescription} style={{ borderWidth: 1, height: 80, marginBottom: 8 }} multiline />
-      <Button title="Submit Issue" onPress={submitIssue} />
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+        <Button title="Pick Photo" onPress={pickImage} />
+        <Button title="Submit Issue" onPress={submitIssue} />
+      </View>
+
+      <FlatList
+        data={photos}
+        horizontal
+        keyExtractor={(p, i) => `${p.uri}-${i}`}
+        renderItem={({ item }) => (
+          <Image source={{ uri: item.uri }} style={{ width: 80, height: 80, marginRight: 8 }} />
+        )}
+      />
 
       <Button title="Refresh Issues" onPress={fetchIssues} />
       <FlatList data={issues} keyExtractor={i => i.id} renderItem={({ item }) => (
