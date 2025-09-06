@@ -1,5 +1,11 @@
 import React from 'react';
 
+/**
+ * The main landing page for the dashboard.
+ *
+ * Provides a welcome message and a link to the main map page.
+ * @returns {React.ReactElement} The home page component.
+ */
 export default function Home() {
   return (
     <div style={{ padding: 24 }}>

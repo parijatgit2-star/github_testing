@@ -9,6 +9,11 @@ const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 
 let _supabase = null;
+/**
+ * Returns a singleton instance of the Supabase client.
+ * Initializes the client if it hasn't been created yet.
+ * @returns {import('@supabase/supabase-js').SupabaseClient|null} The Supabase client instance, or null if configuration is missing.
+ */
 function getSupabase() {
   if (_supabase) return _supabase;
   if (!SUPABASE_URL || !SUPABASE_KEY) return null;
@@ -20,6 +25,14 @@ function getSupabase() {
   }
 }
 
+/**
+ * The main component for the mobile application.
+ *
+ * This component handles user authentication, issue submission with image uploads,
+ * and viewing a list of existing issues. It manages all the necessary state
+ * and side effects for the application's core functionality.
+ * @returns {React.ReactElement} The main application component.
+ */
 export default function App() {
   const [email, setEmail] = useState('');
   const [user, setUser] = useState(null);
@@ -74,6 +87,10 @@ export default function App() {
     };
   }, []);
 
+  /**
+   * Initiates the Supabase "magic link" sign-in process.
+   * Sends a one-time password (OTP) link to the user's email.
+   */
   async function signIn() {
     const sb = getSupabase();
     if (!sb) return Alert.alert('Missing configuration', 'Supabase is not configured in this environment.');
@@ -82,6 +99,11 @@ export default function App() {
     alert('Check your email for login link');
   }
 
+  /**
+   * Submits a new issue to the backend API.
+   * Gathers the current location, description, and any selected photos,
+   * then sends them as a multipart/form-data request.
+   */
   async function submitIssue() {
     const loc = await Location.getCurrentPositionAsync({});
     const fd = new FormData();
@@ -122,6 +144,9 @@ export default function App() {
     }
   }
 
+  /**
+   * Fetches the latest issues from the Supabase database.
+   */
   async function fetchIssues() {
     // Simple list fetch via Supabase
     try {
@@ -139,7 +164,10 @@ export default function App() {
     fetchIssues();
   }, []);
 
-  // Image picker helper
+  /**
+   * Opens the device's image library to allow the user to select photos.
+   * Uses `expo-image-picker` to handle the selection process.
+   */
   async function pickImage() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();

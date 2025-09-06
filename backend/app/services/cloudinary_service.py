@@ -4,8 +4,20 @@ from ..config import settings
 
 
 async def upload_image(file_path: str, folder: str = 'issues') -> Dict[str, Optional[str]]:
-    """Upload a file to Cloudinary using the REST API and return secure_url and public_id.
-    Uses Cloudinary API key/secret for authentication.
+    """Uploads an image file to Cloudinary.
+
+    This function reads a file from the local filesystem and uploads it to a
+    specified folder in Cloudinary using the Cloudinary REST API. It
+    authenticates using credentials from the application settings.
+
+    Args:
+        file_path: The local path to the image file to upload.
+        folder: The name of the folder in Cloudinary to upload the image to.
+            Defaults to 'issues'.
+
+    Returns:
+        A dictionary containing the 'secure_url' and 'public_id' of the
+        uploaded image. Returns None for values if the upload fails.
     """
     url = f"https://api.cloudinary.com/v1_1/{settings.CLOUDINARY_CLOUD_NAME}/image/upload"
     auth = (settings.CLOUDINARY_API_KEY, settings.CLOUDINARY_API_SECRET)
@@ -27,7 +39,15 @@ async def upload_image(file_path: str, folder: str = 'issues') -> Dict[str, Opti
 
 
 async def delete_image(public_id: str) -> Dict:
-    """Delete image by public_id using Cloudinary API."""
+    """Deletes an image from Cloudinary using its public ID.
+
+    Args:
+        public_id: The unique public identifier of the image in Cloudinary.
+
+    Returns:
+        A dictionary containing the result of the deletion operation from
+        the Cloudinary API.
+    """
     url = f"https://api.cloudinary.com/v1_1/{settings.CLOUDINARY_CLOUD_NAME}/resources/image/upload"
     auth = (settings.CLOUDINARY_API_KEY, settings.CLOUDINARY_API_SECRET)
     params = {'public_ids[]': public_id}

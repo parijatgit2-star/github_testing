@@ -1,3 +1,12 @@
+"""Manages application configuration using Pydantic and environment variables.
+
+This module defines the configuration settings for the application, loading
+them from a .env file and environment variables. It uses Pydantic's `BaseSettings`
+for robust validation and type casting, with a simple fallback mechanism for
+testing environments where `pydantic-settings` may not be available.
+
+It also handles the configuration of the Cloudinary SDK if credentials are provided.
+"""
 import os
 try:
 	from pydantic import BaseSettings, AnyUrl
@@ -19,6 +28,12 @@ load_dotenv()
 
 if BaseSettings:
 	class Settings(BaseSettings):
+		"""Defines the application's configuration parameters.
+
+		This class uses Pydantic's `BaseSettings` to automatically read
+		configuration from environment variables and a .env file. It provides
+		type hints and validation for all settings.
+		"""
 		SUPABASE_URL: AnyUrl
 		SUPABASE_KEY: str
 		SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
@@ -30,6 +45,7 @@ if BaseSettings:
 		JWT_EXPIRY_MINUTES: int = 60
 
 		class Config:
+			"""Pydantic configuration options."""
 			env_file = '.env'
 
 
@@ -37,6 +53,11 @@ if BaseSettings:
 else:
 	# Minimal fallback settings using environment variables for test runs.
 	class Settings:
+		"""A fallback settings class for environments without `pydantic-settings`.
+
+		This class reads settings directly from environment variables without
+		the validation and type casting provided by Pydantic.
+		"""
 		SUPABASE_URL = os.environ.get('SUPABASE_URL', 'http://localhost')
 		SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
 		SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')

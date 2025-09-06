@@ -13,6 +13,14 @@ KEYWORD_MAP = {
 
 
 def detect_department_from_text(text: str) -> Optional[str]:
+    """Detects a likely department name from text based on keywords.
+
+    Args:
+        text: The input string to analyze (e.g., an issue description).
+
+    Returns:
+        The name of the matched department, or None if no keyword is found.
+    """
     if not text:
         return None
     t = text.lower()
@@ -23,8 +31,21 @@ def detect_department_from_text(text: str) -> Optional[str]:
 
 
 def map_department_name_to_id(departments: Dict[str, str], name: str) -> Optional[str]:
-    """Given a mapping of department rows (id->name) or name->id, return the id for the given name.
-    departments may be a dict where keys are ids and values are names, or vice-versa.
+    """Finds a department ID from a name, supporting forward and reverse mappings.
+
+    This utility function is designed to work with two possible dictionary
+    formats for the `departments` mapping:
+    1.  `{department_id: department_name}`
+    2.  `{department_name: department_id}`
+
+    It checks for the name in both keys and values to find the corresponding ID.
+
+    Args:
+        departments: A dictionary mapping department IDs to names, or names to IDs.
+        name: The name of the department to find the ID for.
+
+    Returns:
+        The matching department ID as a string, or None if not found.
     """
     if not name:
         return None

@@ -9,6 +9,10 @@ create table if not exists users (
   name text,
   created_at timestamptz default now()
 );
+COMMENT ON TABLE users IS 'Stores user authentication information, including email and role.';
+COMMENT ON COLUMN users.id IS 'Primary key for the user.';
+COMMENT ON COLUMN users.role IS 'User role, e.g., citizen, staff, admin.';
+
 
 -- Optional profiles table (application profile data)
 create table if not exists profiles (
@@ -18,6 +22,8 @@ create table if not exists profiles (
   avatar_url text,
   updated_at timestamptz default now()
 );
+COMMENT ON TABLE profiles IS 'Stores application-specific user profile data, linked to the auth users table.';
+
 
 -- Departments for routing and assignment
 create table if not exists departments (
@@ -25,6 +31,8 @@ create table if not exists departments (
   name text unique not null,
   description text
 );
+COMMENT ON TABLE departments IS 'Defines the municipal departments to which issues can be assigned.';
+
 
 -- Issues: images stored as JSONB array of objects {url, public_id}
 create table if not exists issues (
@@ -41,6 +49,12 @@ create table if not exists issues (
   user_id uuid references users(id) on delete set null,
   department_id uuid references departments(id) on delete set null
 );
+COMMENT ON TABLE issues IS 'The core table for tracking civic issues reported by users.';
+COMMENT ON COLUMN issues.status IS 'The current status of the issue (e.g., pending, assigned, resolved).';
+COMMENT ON COLUMN issues.images IS 'A JSONB array of image objects, each with a URL and a public ID for services like Cloudinary.';
+COMMENT ON COLUMN issues.user_id IS 'Foreign key linking to the user who reported the issue.';
+COMMENT ON COLUMN issues.department_id IS 'Foreign key linking to the department responsible for the issue.';
+
 
 -- Comments on issues
 create table if not exists comments (
@@ -50,6 +64,9 @@ create table if not exists comments (
   text text,
   created_at timestamptz default now()
 );
+COMMENT ON TABLE comments IS 'Stores comments made by users or staff on a specific issue.';
+COMMENT ON COLUMN comments.issue_id IS 'Foreign key linking to the issue being commented on.';
+
 
 -- Devices registered for push notifications
 create table if not exists devices (
@@ -59,6 +76,9 @@ create table if not exists devices (
   platform text,
   created_at timestamptz default now()
 );
+COMMENT ON TABLE devices IS 'Stores device tokens for sending push notifications to users.';
+COMMENT ON COLUMN devices.device_token IS 'The unique token provided by the push notification service (e.g., FCM, APNS).';
+
 
 -- Notifications persisted for users
 create table if not exists notifications (
@@ -69,6 +89,8 @@ create table if not exists notifications (
   metadata jsonb,
   created_at timestamptz default now()
 );
+COMMENT ON TABLE notifications IS 'A log of notifications sent to users, such as status updates on their issues.';
+
 
 -- Push delivery logs / push_logs
 create table if not exists push_logs (
@@ -78,6 +100,8 @@ create table if not exists push_logs (
   status text,
   created_at timestamptz default now()
 );
+COMMENT ON TABLE push_logs IS 'Logs attempts to send push notifications for debugging and tracking purposes.';
+
 
 -- FAQ table
 create table if not exists faq (
@@ -85,6 +109,8 @@ create table if not exists faq (
   question text,
   answer text
 );
+COMMENT ON TABLE faq IS 'Stores questions and answers for the Frequently Asked Questions feature.';
+
 
 -- =====================================================
 -- Seed data (canonical): departments, sample users, sample issue, device, comment
@@ -94,6 +120,7 @@ create table if not exists faq (
 -- =====================================================
 
 -- Departments
+-- Seed the database with a standard set of municipal departments.
 insert into departments (id, name, description)
 values
   (gen_random_uuid(), 'Sanitation', 'Handles waste and street cleaning'),
@@ -103,7 +130,10 @@ values
   (gen_random_uuid(), 'Others', 'Miscellaneous issues')
 on conflict (name) do nothing;
 
--- Users (create citizen, staff, admin). Passwords left empty for local/dev; integrate with Supabase Auth in prod.
+-- Users
+-- Create a set of sample users with different roles for testing purposes.
+-- Passwords are left empty for local development; in production, user
+-- management should be handled exclusively by Supabase Auth.
 with new_users as (
   insert into users (id, email, password_hash, role, name)
   values
@@ -114,7 +144,8 @@ with new_users as (
 )
 select * from new_users;
 
--- Sample issue linked to Citizen and routed to Roads department
+-- Sample Issue
+-- Create a sample issue reported by the citizen user and assigned to the Roads department.
 with dept as (
   select id from departments where name='Roads' limit 1
 ),
@@ -135,12 +166,14 @@ values (
 )
 on conflict do nothing;
 
--- Device registration example for staff user
+-- Sample Device
+-- Register a sample device for the staff user to test push notifications.
 insert into devices (id, user_id, device_token, platform)
 values (gen_random_uuid(), (select id from users where email='staff@example.local'), 'dev-token-1', 'android')
 on conflict do nothing;
 
--- Sample comment by staff on the sample issue
+-- Sample Comment
+-- Add a sample comment from the staff user on the created issue.
 insert into comments (id, issue_id, user_id, text)
 select gen_random_uuid(), i.id, u.id, 'We''ll inspect this within 48 hours.'
 from issues i join users u on u.email='staff@example.local' limit 1

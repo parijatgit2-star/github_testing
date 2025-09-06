@@ -10,6 +10,19 @@ API_KEY = getattr(settings, 'SUPABASE_SERVICE_ROLE_KEY', None) or settings.SUPAB
 
 
 def _build_filters(filters: Optional[Dict[str, Any]]) -> Optional[str]:
+    """Builds a Supabase filter query string from a dictionary.
+
+    Example:
+        `{'id.eq': 5, 'status': 'pending'}` becomes `"id=eq.5&status=eq.pending"`
+
+    Args:
+        filters: A dictionary of filters. Keys can include operators
+            (e.g., 'column.operator') or be simple column names for equality.
+
+    Returns:
+        A URL-encoded string of filter parameters, or None if no filters
+        are provided.
+    """
     if not filters:
         return None
     parts = []
@@ -23,6 +36,21 @@ def _build_filters(filters: Optional[Dict[str, Any]]) -> Optional[str]:
 
 
 async def supabase_request(method: str, table: str, payload: Optional[Dict] = None, filters: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, str]] = None):
+    """Performs a generic request to a Supabase REST endpoint.
+
+    This function is a wrapper around httpx to interact with the Supabase
+    `/rest/v1` API, handling authentication and request construction.
+
+    Args:
+        method: The HTTP method (GET, POST, PATCH, DELETE).
+        table: The name of the database table to interact with.
+        payload: A dictionary for the request body (for POST, PATCH).
+        filters: A dictionary of filters to apply (for GET, PATCH, DELETE).
+        headers: Optional additional headers to include in the request.
+
+    Returns:
+        A dictionary containing the response status code, data, and headers.
+    """
     url = f"{BASE_REST}/{table}"
     params = _build_filters(filters)
     req_headers = {
@@ -56,8 +84,20 @@ async def supabase_request(method: str, table: str, payload: Optional[Dict] = No
 
 
 async def auth_request(method: str, path: str, payload: Optional[Dict] = None, token: Optional[str] = None, form: bool = False):
-    """Call Supabase Auth endpoints under /auth/v1{path}.
-    path should start with '/'. If form=True payload will be sent as form data.
+    """Performs a request to a Supabase Auth endpoint.
+
+    This function is a wrapper around httpx to interact with the Supabase
+    `/auth/v1` API, handling authentication and request construction.
+
+    Args:
+        method: The HTTP method (GET, POST, DELETE).
+        path: The API path, which should start with a '/'.
+        payload: A dictionary for the request body (for POST).
+        token: An optional user-specific JWT to use for authorization.
+        form: If True, the payload will be sent as form data instead of JSON.
+
+    Returns:
+        A dictionary containing the response status code, data, and headers.
     """
     url = BASE_AUTH + path
     req_headers = {'apikey': API_KEY, 'Accept': 'application/json'}
