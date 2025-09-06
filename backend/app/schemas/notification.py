@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class Notification(BaseModel):
+    """Schema representing a user notification."""
     id: int
     user_id: str
     message: str

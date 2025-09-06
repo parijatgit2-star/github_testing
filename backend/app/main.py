@@ -1,3 +1,9 @@
+"""Main entry point for the FastAPI application.
+
+This module initializes the FastAPI application, configures middleware (CORS),
+includes all the API routers from the `routes` directory, sets up custom
+exception handlers, and defines a simple health check endpoint.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -31,6 +37,12 @@ app.include_router(admin.router)
 
 @app.get('/health')
 def health():
+    """Provides a simple health check endpoint.
+
+    Returns:
+        A dictionary with a single key 'ok' set to True, indicating the
+        service is running.
+    """
     return {'ok': True}
 
 

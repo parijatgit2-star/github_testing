@@ -7,6 +7,12 @@ const dummy = [
 	{ label: 'Other', value: 15 },
 ];
 
+/**
+ * A simple, responsive bar chart component rendered with SVG.
+ * @param {object} props - The component props.
+ * @param {Array<{label: string, value: number}>} [props.data=[]] - The data to display.
+ * @returns {React.ReactElement} An SVG element representing the bar chart.
+ */
 function SimpleBarChart({ data = [] }) {
 	const max = Math.max(...data.map(d => d.value), 1);
 	return (
@@ -28,6 +34,12 @@ function SimpleBarChart({ data = [] }) {
 	);
 }
 
+/**
+ * The main analytics page for the dashboard.
+ *
+ * Displays a sample bar chart of issue volume by category.
+ * @returns {React.ReactElement} The analytics page component.
+ */
 export default function Analytics() {
 	return (
 		<div style={{ padding: 24 }}>

@@ -4,8 +4,23 @@ from ..db.supabase_client import auth_request
 
 
 async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
-    """Validate Supabase access token by calling Supabase /auth/v1/user endpoint.
-    Returns a normalized user dict with at least 'id' and 'email'. Raises HTTPException(401) on failure.
+    """FastAPI dependency to get the current user from a Supabase access token.
+
+    This function validates a Supabase JWT passed in the Authorization header
+    by calling the Supabase `/auth/v1/user` endpoint. It returns a normalized
+    user dictionary.
+
+    Args:
+        authorization: The 'Authorization' header string, expected to contain
+            a 'Bearer' token. Injected by FastAPI.
+
+    Returns:
+        A dictionary containing the normalized user information, including 'id',
+        'email', 'role', and the raw user data from Supabase.
+
+    Raises:
+        HTTPException(401): If the Authorization header is missing, or if the
+            token is invalid or expired.
     """
     if not authorization:
         raise HTTPException(status_code=401, detail='Missing Authorization header')

@@ -15,7 +15,18 @@ router = APIRouter(prefix='/admin', tags=['admin'])
 
 @router.get('/users', response_model=List[dict])
 async def list_users(limit: int = 50, offset: int = 0, user=Depends(get_current_user)):
-    """List users (admin only)."""
+    """Lists all users in the system.
+
+    This is a protected endpoint available only to admin users.
+
+    Args:
+        limit: The maximum number of users to return.
+        offset: The starting offset for pagination.
+        user: The authenticated user, injected by FastAPI.
+
+    Returns:
+        A list of user profile dictionaries.
+    """
     if not user or user.get('role') != 'admin':
         raise HTTPException(status_code=403, detail='Forbidden')
     r = await supabase_request('GET', 'profiles')
@@ -24,7 +35,18 @@ async def list_users(limit: int = 50, offset: int = 0, user=Depends(get_current_
 
 @router.patch('/users/{user_id}', response_model=SimpleOK)
 async def update_user(user_id: str, payload: dict, user=Depends(get_current_user)):
-    """Update a user (admin only)."""
+    """Updates a user's profile.
+
+    This is a protected endpoint available only to admin users.
+
+    Args:
+        user_id: The ID of the user to update.
+        payload: A dictionary containing the profile fields to update.
+        user: The authenticated user, injected by FastAPI.
+
+    Returns:
+        A dictionary indicating success.
+    """
     if not user or user.get('role') != 'admin':
         raise HTTPException(status_code=403, detail='Forbidden')
     await supabase_request('PATCH', 'profiles', payload=payload, filters={'id.eq': user_id})
@@ -33,7 +55,17 @@ async def update_user(user_id: str, payload: dict, user=Depends(get_current_user
 
 @router.delete('/users/{user_id}', response_model=SimpleOK)
 async def delete_user(user_id: str, user=Depends(get_current_user)):
-    """Delete a user (admin only)."""
+    """Deletes a user from the system.
+
+    This is a protected endpoint available only to admin users.
+
+    Args:
+        user_id: The ID of the user to delete.
+        user: The authenticated user, injected by FastAPI.
+
+    Returns:
+        A dictionary indicating success.
+    """
     if not user or user.get('role') != 'admin':
         raise HTTPException(status_code=403, detail='Forbidden')
     await supabase_request('DELETE', 'profiles', filters={'id.eq': user_id})
@@ -43,7 +75,19 @@ async def delete_user(user_id: str, user=Depends(get_current_user)):
 
 @router.get('/analytics/issues-by-time', response_model=List[IssuesByTimeItem])
 async def issues_by_time(days: int = 7, user=Depends(get_current_user)):
-    """Return count of issues per day for the last `days` days."""
+    """Gets the number of issues created per day for a recent period.
+
+    This is a protected endpoint available only to admin users. It provides
+    data suitable for time-series charts.
+
+    Args:
+        days: The number of past days to include in the analysis.
+        user: The authenticated user, injected by FastAPI.
+
+    Returns:
+        A list of items, each containing a date and the count of issues
+        created on that date.
+    """
     if not user or user.get('role') != 'admin':
         raise HTTPException(status_code=403, detail='Forbidden')
     # simple implementation: fetch recent issues and group by created_at date
@@ -70,7 +114,19 @@ async def issues_by_time(days: int = 7, user=Depends(get_current_user)):
 
 @router.get('/analytics/response-times', response_model=ResponseTimesModel)
 async def response_times(days: int = 30, user=Depends(get_current_user)):
-    """Return average response time (hours) for issues handled in the period."""
+    """Calculates the average issue response time over a recent period.
+
+    This is a protected endpoint available only to admin users. "Response time"
+    is defined as the duration between issue creation and resolution.
+
+    Args:
+        days: The number of past days to include in the analysis.
+        user: The authenticated user, injected by FastAPI.
+
+    Returns:
+        An object containing the average response time in hours and the
+        total number of issues included in the calculation.
+    """
     if not user or user.get('role') != 'admin':
         raise HTTPException(status_code=403, detail='Forbidden')
     r = await supabase_request('GET', 'issues')
@@ -99,7 +155,21 @@ async def response_times(days: int = 30, user=Depends(get_current_user)):
 
 @router.get('/analytics/hotspots', response_model=List[HotspotItem])
 async def hotspots(radius_meters: int = 250, days: int = 30, user=Depends(get_current_user)):
-    """Return clusters of coordinates with high issue density (naive)."""
+    """Identifies geographic hotspots with a high density of reported issues.
+
+    This is a protected endpoint available only to admin users. It uses a naive
+    clustering algorithm based on rounding coordinates.
+
+    Args:
+        radius_meters: The radius to consider for clustering (currently unused
+            as the implementation uses a simple rounding approach).
+        days: The number of past days to include in the analysis.
+        user: The authenticated user, injected by FastAPI.
+
+    Returns:
+        A list of hotspot items, each containing a latitude, longitude, and
+        the count of issues in that cluster.
+    """
     if not user or user.get('role') != 'admin':
         raise HTTPException(status_code=403, detail='Forbidden')
     r = await supabase_request('GET', 'issues')

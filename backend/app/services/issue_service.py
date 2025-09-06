@@ -1,4 +1,3 @@
-
 from typing import Optional, Dict, Any, List, Union
 from ..db.supabase_client import supabase_request
 from ..services.cloudinary_service import upload_image, delete_image
@@ -12,8 +11,30 @@ import os
 
 
 async def create_issue(data: Union[IssueCreateModel, IssueCreate, Dict[str, Any]], image_files: Optional[List[Any]] = None, user: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-    """Create an issue. Accepts a list of UploadFile-like objects in image_files.
-    Runs spam detection before upload. Returns result dict.
+    """Creates a new issue, processes images, and saves it to the database.
+
+    This function performs several steps:
+    1.  Runs spam detection on the issue's title and description.
+    2.  If images are provided, uploads them to Cloudinary.
+    3.  Attempts to auto-detect and assign a department based on the text.
+    4.  Saves the final issue data to the Supabase database.
+    5.  If any step fails, it attempts to clean up uploaded images.
+
+    Args:
+        data: A Pydantic model or dictionary containing the issue data (title,
+            description, etc.).
+        image_files: An optional list of image files to be uploaded. These should
+            be file-like objects (e.g., FastAPI's UploadFile).
+        user: An optional dictionary representing the user creating the issue.
+            If provided, the issue will be associated with this user.
+
+    Returns:
+        A dictionary representing the newly created issue from the database.
+        If spam is detected, it returns a dictionary with an error message.
+
+    Raises:
+        Exception: If the database operation fails, it re-raises the exception
+            after attempting to clean up any uploaded images.
     """
     # spam detection on text fields
     # Support Pydantic models, objects with attributes, or plain dict payloads
@@ -93,11 +114,25 @@ async def create_issue(data: Union[IssueCreateModel, IssueCreate, Dict[str, Any]
 
 
 async def get_issues() -> Any:
+    """Retrieves all issues from the database.
+
+    Returns:
+        A list of dictionaries, where each dictionary represents an issue.
+        Returns None if the database call fails.
+    """
     r = await supabase_request('GET', 'issues')
     return r.get('data')
 
 
 async def get_issue(id: str) -> Optional[Dict[str, Any]]:
+    """Retrieves a single issue by its unique ID.
+
+    Args:
+        id: The unique identifier of the issue to retrieve.
+
+    Returns:
+        A dictionary representing the issue if found, otherwise None.
+    """
     filters = {'id.eq': id}
     r = await supabase_request('GET', 'issues', filters=filters)
     rows = r.get('data') or []
@@ -105,6 +140,22 @@ async def get_issue(id: str) -> Optional[Dict[str, Any]]:
 
 
 async def update_issue(id: str, data: Union[IssueUpdateModel, IssueUpdate, Dict[str, Any]], user: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Updates an existing issue in the database.
+
+    This function updates an issue's fields based on the provided data.
+    If the 'status' of the issue is changed, it creates a notification for the
+    user who originally created the issue.
+
+    Args:
+        id: The unique identifier of the issue to update.
+        data: A Pydantic model or dictionary containing the fields to update.
+            Only non-None fields will be updated.
+        user: The user performing the update (not currently used for permissions,
+            but available for future use).
+
+    Returns:
+        A dictionary representing the updated issue if successful, otherwise None.
+    """
     # fetch existing to detect status changes
     existing = await get_issue(id)
     # accept Pydantic model or dict-like
@@ -138,6 +189,21 @@ async def update_issue(id: str, data: Union[IssueUpdateModel, IssueUpdate, Dict[
 
 
 async def delete_issue(id: str, user) -> Dict[str, Any]:
+    """Deletes an issue from the database.
+
+    Before deletion, this function verifies that the user attempting to delete
+    the issue is the same user who created it. It also cleans up any
+
+    associated images from Cloudinary.
+
+    Args:
+        id: The unique identifier of the issue to delete.
+        user: The user object, used to authorize the deletion.
+
+    Returns:
+        A dictionary indicating success or failure. On failure, it includes
+        a status code and an error message.
+    """
     issue = await get_issue(id)
     if not issue:
         return {'ok': False, 'status_code': 404, 'error': 'Not found'}

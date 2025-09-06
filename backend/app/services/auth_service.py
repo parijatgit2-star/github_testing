@@ -4,6 +4,15 @@ from typing import Dict, Any
 
 
 async def signup_user(data: SignupRequest) -> Dict[str, Any]:
+    """Signs up a new user using Supabase Auth.
+
+    Args:
+        data: An object containing the user's email and password.
+
+    Returns:
+        A dictionary indicating success or failure. On success, it includes
+        the user data from Supabase. On failure, it includes an error message.
+    """
     # Use Supabase Auth signup endpoint
     payload = {"email": data.email, "password": data.password}
     res = await auth_request('POST', '/signup', payload=payload)
@@ -13,6 +22,19 @@ async def signup_user(data: SignupRequest) -> Dict[str, Any]:
 
 
 async def login_user(data: LoginRequest) -> Dict[str, Any]:
+    """Logs in a user using Supabase Auth.
+
+    This function authenticates a user by sending their credentials to the
+    Supabase token endpoint, exchanging them for an access token.
+
+    Args:
+        data: An object containing the user's email and password.
+
+    Returns:
+        A dictionary indicating success or failure. On success, it includes
+        the access token and user data. On failure, it includes an error
+        message.
+    """
     # Use Supabase token endpoint: form data grant_type=password
     payload = {'grant_type': 'password', 'username': data.email, 'password': data.password}
     res = await auth_request('POST', '/token', payload=payload, form=True)

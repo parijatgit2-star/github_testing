@@ -10,6 +10,17 @@ router = APIRouter(prefix='/auth', tags=['auth'])
 
 @router.post('/signup', status_code=201, response_model=SimpleOK)
 async def signup(payload: SignupRequest):
+    """Handles user registration.
+
+    Args:
+        payload: A `SignupRequest` object containing the user's email and password.
+
+    Returns:
+        A dictionary indicating the success of the operation.
+
+    Raises:
+        HTTPException: If the signup process fails (e.g., user already exists).
+    """
     res = await signup_user(payload)
     if not res.get('ok'):
         raise HTTPException(status_code=400, detail=res.get('error', 'Signup failed'))
@@ -18,6 +29,17 @@ async def signup(payload: SignupRequest):
 
 @router.post('/login', response_model=AuthLoginResponse)
 async def login(payload: LoginRequest):
+    """Handles user login and returns an access token.
+
+    Args:
+        payload: A `LoginRequest` object containing the user's email and password.
+
+    Returns:
+        An `AuthLoginResponse` containing the access token and token type.
+
+    Raises:
+        HTTPException: If the login credentials are invalid.
+    """
     res = await login_user(payload)
     if not res.get('ok'):
         raise HTTPException(status_code=401, detail=res.get('error', 'Invalid credentials'))
@@ -29,7 +51,17 @@ async def login(payload: LoginRequest):
 
 @router.post('/logout', response_model=SimpleOK)
 async def logout(authorization: Optional[str] = Header(None)):
-    """Invalidate the current session token (Supabase sign out)."""
+    """Invalidates the user's current session token via Supabase sign out.
+
+    Args:
+        authorization: The 'Authorization' header containing the Bearer token.
+
+    Returns:
+        A dictionary indicating the success of the operation.
+
+    Raises:
+        HTTPException: If the logout process fails or the token is missing.
+    """
     if not authorization:
         raise HTTPException(status_code=401, detail='Missing Authorization')
     token = authorization.split(' ', 1)[1] if authorization.startswith('Bearer ') else authorization
@@ -41,7 +73,17 @@ async def logout(authorization: Optional[str] = Header(None)):
 
 @router.post('/refresh', response_model=AuthLoginResponse)
 async def refresh(token: str):
-    """Exchange refresh token for a new access token (mock using auth_request)."""
+    """Exchanges a refresh token for a new access token.
+
+    Args:
+        token: The refresh token provided by Supabase upon login.
+
+    Returns:
+        An `AuthLoginResponse` containing the new access token and token type.
+
+    Raises:
+        HTTPException: If the refresh token is invalid.
+    """
     res = await auth_request('POST', '/token', payload={'grant_type': 'refresh_token', 'refresh_token': token}, form=True)
     if res.get('status_code') != 200:
         raise HTTPException(status_code=401, detail='Invalid refresh token')
@@ -51,7 +93,19 @@ async def refresh(token: str):
 
 @router.post('/reset-password', response_model=SimpleOK)
 async def reset_password(payload: dict):
-    """Mock password reset: in production trigger email via Supabase/Auth or SMTP."""
+    """Initiates the password reset process for a user.
+
+    Note:
+        This is a mock endpoint for testing purposes. In a production
+        environment, this should trigger an email to the user via Supabase
+        Auth or a dedicated SMTP service.
+
+    Args:
+        payload: A dictionary containing the user's email.
+
+    Returns:
+        A dictionary indicating the success of the request.
+    """
     # We'll accept {email: str} and return ok for testing
     if not payload.get('email'):
         raise HTTPException(status_code=400, detail='email required')
