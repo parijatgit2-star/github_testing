@@ -16,14 +16,33 @@ import 'leaflet/dist/leaflet.css';
  */
 export default function Map({ issues = [] }) {
   useEffect(() => {
-    const map = L.map('map').setView([0, 0], 2);
+    // Default view if no issues have locations
+    let initialView = [20, 0];
+    let initialZoom = 2;
+
+    const locatedIssues = issues.filter(issue => issue.location);
+    if (locatedIssues.length > 0) {
+      const firstLocation = locatedIssues[0].location.split(',');
+      initialView = [parseFloat(firstLocation[0]), parseFloat(firstLocation[1])];
+      initialZoom = 13;
+    }
+
+    const map = L.map('map').setView(initialView, initialZoom);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    issues.forEach(issue => {
-      if (issue.location) {
-        // location is geography(point) - we will skip parsing here in scaffold
+    locatedIssues.forEach(issue => {
+      const [lat, lon] = issue.location.split(',');
+      if (!isNaN(lat) && !isNaN(lon)) {
+        const marker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(map);
+        const popupContent = `
+          <b>${issue.title}</b>
+          <br>${issue.status}
+          <br><a href="/issues/${issue.id}">View Details</a>
+        `;
+        marker.bindPopup(popupContent);
       }
     });
 

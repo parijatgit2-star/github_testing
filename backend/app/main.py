@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
-from .routes import issues, auth, faq, notifications
+from .routes import issues, auth, faq, notifications, departments
 from .routes import users
 from .routes import admin
 from .utils.error_handler import validation_exception_handler, http_exception_handler, generic_exception_handler
@@ -33,6 +33,7 @@ app.include_router(issues.router)
 app.include_router(faq.router)
 app.include_router(notifications.router)
 app.include_router(admin.router)
+app.include_router(departments.router)
 
 
 @app.get('/health')
